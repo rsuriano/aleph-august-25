@@ -57,15 +57,7 @@ async function main() {
         value: 100000000000000,
         input: "0x00",
         status: 1,
-        events: [
-          // {
-          //   logIndex: 0,
-          //   emitterAddress: "0x0000000000000000000000000000000000000000",
-          //   topics: [],
-          //   data: "0x",
-          //   removed: false,
-          // },
-        ],
+        events: [],
       },
     },
     proof: [

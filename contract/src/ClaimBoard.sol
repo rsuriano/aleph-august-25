@@ -1,6 +1,52 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
+// FDC Verification contract interface
+interface IFDCVerification {
+    function verifyEVMTransaction(
+        bytes32[] calldata merkleProof,
+        FDCData calldata data
+    ) external view returns (bool);
+}
+
+// FDC Data structures matching your TypeScript code
+struct FDCData {
+    bytes32 attestationType;
+    bytes32 sourceId;
+    uint64 votingRound;
+    uint64 lowestUsedTimestamp;
+    FDCRequestBody requestBody;
+    FDCResponseBody responseBody;
+}
+
+struct FDCRequestBody {
+    bytes32 transactionHash;
+    uint16 requiredConfirmations;
+    bool provideInput;
+    bool listEvents;
+    uint32[] logIndices;
+}
+
+struct FDCResponseBody {
+    uint64 blockNumber;
+    uint64 timestamp;
+    address sourceAddress;
+    bool isDeployment;
+    address receivingAddress;
+    uint256 value;
+    bytes input;
+    uint8 status;
+    FDCEvent[] events;
+}
+
+struct FDCEvent {
+    uint32 logIndex;
+    address emitterAddress;
+    bytes32[] topics;
+    bytes data;
+    bool removed;
+}
+
 contract ClaimBoard {
     enum Status { Open, Resolved, Cancelled }
 
@@ -15,11 +61,14 @@ contract ClaimBoard {
         uint256 bounty;
         Status  status;
         address winner;
+        bytes32 transactionHash;
     }
 
     mapping(bytes32 => Claim) public claims;
     bytes32[] public claimIds;
-      
+    
+    address public fdcContract;
+
     error AmountCannotBeZero();
     error MinConfsCannotBeZero();
     error BountyTooSmall();
@@ -28,6 +77,12 @@ contract ClaimBoard {
     error ClaimAlreadyResolved();
     error ClaimExpired();
     error ClaimNotFound();
+    error FDCVerificationFailed();
+    error InvalidFDCData();
+    
+    constructor() {
+        fdcContract = 0x075bf301fF07C4920e5261f93a0609640F53487D;
+    }
 
     function getClaim(bytes32 claimId) external view returns (Claim memory) {
         Claim memory claim = claims[claimId];
@@ -70,11 +125,45 @@ contract ClaimBoard {
             poster: msg.sender,
             bounty: msg.value,
             status: Status.Open,
-            winner: address(0)
+            winner: address(0),
+            transactionHash: bytes32(0)
         });
 
         claimIds.push(claimId);
         return claimId;
+    }
+
+    // New function: Verify claim using FDC
+    function verifyClaimWithFDC(
+        bytes32 claimId,
+        bytes32[] calldata merkleProof,
+        FDCData calldata fdcData
+    ) external {
+        Claim storage claim = claims[claimId];
+        if (claim.status != Status.Open) revert ClaimAlreadyResolved();
+        // if (claim.deadline < block.timestamp) revert ClaimExpired();
+
+        // Verify the FDC data matches the claim
+        if (!_validateFDCData(claim, fdcData)) revert InvalidFDCData();
+
+        // Call FDC contract for verification
+        bool verified = IFDCVerification(fdcContract).verifyEVMTransaction(merkleProof, fdcData);
+        if (!verified) revert FDCVerificationFailed();
+
+        // Update claim with verification results
+        claim.status = Status.Resolved;
+        claim.winner = msg.sender;
+        claim.transactionHash = fdcData.requestBody.transactionHash;
+
+        // Transfer bounty to verifier
+        payable(msg.sender).transfer(claim.bounty);
+    }
+
+    // Internal function to validate FDC data against claim
+    function _validateFDCData(Claim storage claim, FDCData calldata fdcData) internal view returns (bool) {
+        // Check if the transaction hash matches expected parameters
+        // You can customize this validation based on your needs
+        return true; // Simplified for now
     }
 
     function verifyPayment(bytes32 claimId) external {

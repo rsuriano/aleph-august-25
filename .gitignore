@@ -13,3 +13,6 @@ docs/
 # Dotenv file
 .env
 /client/node_modules
+
+# Scripts
+scripts/node_modules

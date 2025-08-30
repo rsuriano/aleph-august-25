@@ -4,3 +4,10 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+[profile.coston2]
+src = "src"
+out = "out"
+libs = ["lib"]
+chain_id = 114
+rpc_url = "https://coston2-api.flare.network/ext/C/rpc"

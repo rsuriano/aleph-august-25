@@ -13,7 +13,8 @@ const contractABI = [
   "function getClaimsCount() external view returns (uint256)",
   "function getClaimByIndex(uint256 index) external view returns (bytes32, address, uint256, uint256, uint8)",
   "function verifyPayment(bytes32 claimId) external",
-  "function verifyNonExistence(bytes32 claimId) external", 
+  "function verifyNonExistence(bytes32 claimId) external",
+  "function verifyClaimWithFDC(bytes32 claimId, bytes32[] calldata merkleProof, tuple(bytes32 attestationType, bytes32 sourceId, uint64 votingRound, uint64 lowestUsedTimestamp, tuple(bytes32 transactionHash, uint16 requiredConfirmations, bool provideInput, bool listEvents, uint32[] logIndices) requestBody, tuple(uint64 blockNumber, uint64 timestamp, address sourceAddress, bool isDeployment, address receivingAddress, uint256 value, bytes input, uint8 status, tuple(uint32 logIndex, address emitterAddress, bytes32[] topics, bytes data, bool removed)[] events) responseBody) fdcData) external", 
   "function cancelClaim(bytes32 claimId) external"
 ];
 
@@ -159,6 +160,33 @@ app.post('/claim/:claimId/verify-payment', async (req, res) => {
     const contractWithSigner = contract.connect(wallet);
     
     const tx = await contractWithSigner.verifyPayment(claimId);
+    await tx.wait();
+    
+    res.json({ 
+      success: true, 
+      transactionHash: tx.hash,
+      claimId: claimId,
+      action: 'payment_verified'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify payment with FDC
+app.post('/claim/:claimId/verify-payment-with-fdc', async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const { privateKey, merkleProof, data } = req.body;
+    
+    if (!privateKey) {
+      return res.status(400).json({ error: 'Private key required' });
+    }
+
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const contractWithSigner = contract.connect(wallet);
+    
+    const tx = await contractWithSigner.verifyClaimWithFDC(claimId, merkleProof, data);
     await tx.wait();
     
     res.json({ 

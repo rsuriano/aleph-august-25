@@ -1,3 +1,9 @@
+# local
+# @privateKey = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+# testnet
+@privateKey = 
+
 ### Get contract information
 GET http://localhost:3000/contract-info
 
@@ -15,21 +21,60 @@ Content-Type: application/json
 
 {
   "sourceChainId": 1,
-  "fromAddr": "0x1234",
-  "toAddr": "0x5678", 
-  "amount": "1000000000000000000",
+  "fromAddr": "0xd1c157cbf1a0ce6064ad9f733261364e1ed8fc66",
+  "toAddr": "0x08d2b0a37f869ff76bacb5bab3278e26ab7067b7", 
+  "amount": "100000000000000",
   "minConfs": 6,
   "bounty": "0.1",
   "privateKey": "{{privateKey}}"
 }
 
 ### Verify payment (resolve claim - replace claimId with actual)
-POST http://localhost:3000/claim/0x3599c1b1b1da64bda791c0754ab4136326645630ea11799feb26dcebecd0c741/verify-payment
+POST http://localhost:3000/claim/0x74178e88c9a948fffd84efab9fd50b043a9139e8d1016998233eb8ce5a8cd704/verify-payment
 Content-Type: application/json
 
 {
   "privateKey": "{{privateKey}}"
 }
+
+### Verify payment (resolve claim - replace claimId with actual)
+POST http://localhost:3000/claim/0x5d67651315dbf39c2bd22f4197c4a7a99a5f57b1500709b0f7580f4d9351da41/verify-payment-with-fdc
+Content-Type: application/json
+
+{
+  "privateKey": "{{privateKey}}",
+  "merkleProof": [
+    "0x88e24bd34d4e9e93dd6b1747c74dfe26573cb46acbf7eb53bc05c4e0a685760c",
+    "0xf6a95795dcd4ebc724bcfe1fae8c80f0cca8c01e07b6be5b0c1965b8db86a92a",
+    "0x3ff38fb6c430759518f5889d5fdffa6c4bdebdb19ce2fbb1929717a9f6662ab2",
+    "0xc38dd1a30d6b8e0483ed885499efbb8609168bfab2714a2b0fbd29e03f5a1afb"
+  ],
+  "data": {
+    "attestationType": "0x45564d5472616e73616374696f6e000000000000000000000000000000000000",
+    "sourceId": "0x7465737445544800000000000000000000000000000000000000000000000000",
+    "votingRound": 1090506,
+    "lowestUsedTimestamp": 1756558896,
+    "requestBody": {
+      "transactionHash": "0x9677b2eab721d53f34f60ad0c9e0730bd480d248a1c0421c2724f1cf0d3bb2d3",
+      "requiredConfirmations": 2,
+      "provideInput": false,
+      "listEvents": true,
+      "logIndices": []
+    },
+    "responseBody": {
+      "blockNumber": 9096518,
+      "timestamp": 1756558896,
+      "sourceAddress": "0xd1c157cbf1a0ce6064ad9f733261364e1ed8fc66",
+      "isDeployment": false,
+      "receivingAddress": "0x08d2b0a37f869ff76bacb5bab3278e26ab7067b7",
+      "value": 100000000000000,
+      "input": "0x00",
+      "status": 1,
+      "events": []
+    }
+  }
+}
+
 
 ### Verify non-existence (resolve claim - replace claimId with actual)
 POST http://localhost:3000/claim/0xc57b53e856437c5d946d0a81b8240880030193ed7edfbf4fc28f5aca0436ce72/verify-non-existence

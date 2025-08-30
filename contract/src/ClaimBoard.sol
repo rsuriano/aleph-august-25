@@ -51,13 +51,16 @@ contract ClaimBoard {
         bytes calldata fromAddr,
         bytes calldata toAddr,
         uint256 amount,
-        uint32 minConfs
+        uint32 minConfs,
+        uint32 expirationMinutes
     ) external payable returns (bytes32) {
         if (amount == 0) revert AmountCannotBeZero();
         if (minConfs == 0) revert MinConfsCannotBeZero();
         if (msg.value < 0.001 ether) revert BountyTooSmall();
+        if (expirationMinutes == 0) revert("Expiration minutes cannot be zero");
 
-        uint64 deadline = uint64(block.timestamp + 1 hours);
+        // Calculate deadline: current timestamp + expirationMinutes
+        uint64 deadline = uint64(block.timestamp + (expirationMinutes * 60));
         bytes32 claimId = keccak256(abi.encode(sourceChainId, fromAddr, toAddr, amount, deadline, minConfs, msg.sender));
 
         claims[claimId] = Claim({

@@ -19,6 +19,7 @@ Content-Type: application/json
   "toAddr": "0x5678", 
   "amount": "1000000000000000000",
   "minConfs": 6,
+  "expirationMinutes": 60,
   "bounty": "0.1",
   "privateKey": "{{privateKey}}"
 }

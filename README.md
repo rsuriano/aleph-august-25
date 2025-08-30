@@ -49,8 +49,8 @@ forge create --rpc-url https://coston2-api.flare.network/ext/C/rpc --private-key
 # Ver número de claims
 cast call CONTRACT_ADDRESS "getClaimsCount()" --rpc-url https://coston2-api.flare.network/ext/C/rpc
 
-# Crear claim via cast
-cast send CONTRACT_ADDRESS "postClaim(uint16,bytes,bytes,uint256,uint32)" 1 "0x" "0x1234" 1000000000000000000 6 --value 0.1ether --private-key YOUR_PRIVATE_KEY --rpc-url https://coston2-api.flare.network/ext/C/rpc
+# Crear claim via cast (60 minutos de expiración)
+cast send CONTRACT_ADDRESS "postClaim(uint16,bytes,bytes,uint256,uint32,uint32)" 1 "0x" "0x1234" 1000000000000000000 6 60 --value 0.1ether --private-key YOUR_PRIVATE_KEY --rpc-url https://coston2-api.flare.network/ext/C/rpc
 
 # Obtener claim por ID
 cast call CONTRACT_ADDRESS "getClaim(bytes32)" CLAIM_ID --rpc-url https://coston2-api.flare.network/ext/C/rpc
@@ -89,7 +89,7 @@ npm start
 
 ## Funciones Principales
 
-- `postClaim()` - Crear claim (deadline automático) ✅
+- `postClaim()` - Crear claim (deadline = now + minutos) ✅
 - `getClaim()` - Obtener claim por ID ⚠️ **NO funciona en Coston2**
 - `getClaimsCount()` - Número total de claims ✅
 - `getClaimByIndex()` - Claim por índice (compatible con Coston2) ✅

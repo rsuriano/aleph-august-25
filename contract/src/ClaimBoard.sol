@@ -39,11 +39,52 @@ contract ClaimBoard {
         return claimIds.length;
     }
     
-    function getClaimByIndex(uint256 index) external view returns (bytes32 claimId, address poster, uint256 amount, uint256 bounty, uint8 status) {
+    function getClaimByIndex(uint256 index) external view returns (
+        bytes32 claimId, 
+        address poster, 
+        uint256 amount, 
+        uint256 bounty, 
+        uint8 status, 
+        uint64 deadline,
+        uint16 sourceChainId,
+        address fromAddr,
+        address toAddr,
+        uint32 minConfs
+    ) {
         require(index < claimIds.length, "Index out of bounds");
         bytes32 id = claimIds[index];
         Claim memory claim = claims[id];
-        return (id, claim.poster, claim.amount, claim.bounty, uint8(claim.status));
+        
+        // Convert bytes to address (assuming Ethereum addresses)
+        address from = address(0);
+        address to = address(0);
+        
+        if (claim.fromAddr.length >= 20) {
+            bytes memory fromBytes = claim.fromAddr;
+            assembly {
+                from := mload(add(fromBytes, 32))
+            }
+        }
+        
+        if (claim.toAddr.length >= 20) {
+            bytes memory toBytes = claim.toAddr;
+            assembly {
+                to := mload(add(toBytes, 32))
+            }
+        }
+        
+        return (
+            id, 
+            claim.poster, 
+            claim.amount, 
+            claim.bounty, 
+            uint8(claim.status), 
+            claim.deadline,
+            claim.sourceChainId,
+            from,
+            to,
+            claim.minConfs
+        );
     }
 
     function postClaim(

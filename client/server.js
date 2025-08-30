@@ -11,7 +11,7 @@ const contractABI = [
   "function postClaim(uint16 sourceChainId, bytes calldata fromAddr, bytes calldata toAddr, uint256 amount, uint32 minConfs, uint32 expirationMinutes) external payable returns (bytes32)",
   "function getClaim(bytes32 claimId) external view returns (tuple(uint16 sourceChainId, bytes fromAddr, bytes toAddr, uint256 amount, uint64 deadline, uint32 minConfs, address poster, uint256 bounty, uint8 status, address winner))",
   "function getClaimsCount() external view returns (uint256)",
-  "function getClaimByIndex(uint256 index) external view returns (bytes32, address, uint256, uint256, uint8)",
+  "function getClaimByIndex(uint256 index) external view returns (bytes32, address, uint256, uint256, uint8, uint64, uint16, address, address, uint32)",
   "function verifyPayment(bytes32 claimId) external",
   "function verifyNonExistence(bytes32 claimId) external", 
   "function cancelClaim(bytes32 claimId) external"
@@ -75,13 +75,18 @@ app.get('/claims', async (req, res) => {
     
     const claims = [];
     for (let i = 0; i < totalClaims; i++) {
-      const [claimId, poster, amount, bounty, status] = await contract.getClaimByIndex(i);
+      const [claimId, poster, amount, bounty, status, deadline, sourceChainId, fromAddr, toAddr, minConfs] = await contract.getClaimByIndex(i);
       claims.push({
         claimId: claimId,
         poster: poster,
         amount: amount.toString(),
         bounty: ethers.formatEther(bounty),
-        status: Number(status) // 0=Open, 1=Resolved, 2=Cancelled
+        status: Number(status), // 0=Open, 1=Resolved, 2=Cancelled
+        deadline: Number(deadline),
+        sourceChainId: Number(sourceChainId),
+        fromAddr: fromAddr,
+        toAddr: toAddr,
+        minConfs: Number(minConfs)
       });
     }
     

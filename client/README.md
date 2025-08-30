@@ -1,6 +1,13 @@
-# Aleph Client
+# ClaimBoard API Client
 
-Simple JavaScript client for interacting with the Counter smart contract.
+A simple Express.js backend for interacting with the ClaimBoard smart contract. This allows users to post claims, verify payments, and manage bounties through a REST API.
+
+## Features
+
+- **Post Claims**: Create new claims with bounties for payment verification
+- **Verify Payments**: Resolve claims when payments are verified
+- **Verify Non-Existence**: Resolve claims when payments are confirmed to not exist
+- **Cancel Claims**: Allow posters to cancel claims and get refunds
 
 ## Setup
 
@@ -9,51 +16,70 @@ Simple JavaScript client for interacting with the Counter smart contract.
 npm install
 ```
 
-2. Set environment variables:
-   
-   Copy the example file and update it:
-   ```bash
-   cp env.example .env
-   # Edit .env with your values
-   ```
-   
-   Or set them manually:
-   ```bash
-   export CONTRACT_ADDRESS="0x..." # Your deployed contract address
-   export RPC_URL="https://..." # Your RPC endpoint
-   export PRIVATE_KEY="0x..." # Your wallet private key (optional)
-   ```
+2. Copy environment file and configure:
+```bash
+cp env.example .env
+```
 
-## Usage
+3. Update `.env` with your values:
+```bash
+RPC_URL=https://coston2-api.flare.network/ext/C/rpc
+CONTRACT_ADDRESS=0x... # Your deployed ClaimBoard contract address
+```
 
-Start the server:
+4. Start the server:
 ```bash
 npm start
 # or for development
 npm run dev
 ```
 
-## Endpoints
+## API Endpoints
 
-- `GET /number` - Get current counter value
-- `POST /set-number` - Set counter to specific value
-  - Body: `{ "newNumber": 42, "privateKey": "0x..." }`
-- `POST /increment` - Increment counter by 1
-  - Body: `{ "privateKey": "0x..." }`
+### `GET /contract-info`
+Get contract information including address, balance, and network.
 
-## Example Requests
+### `POST /claim`
+Post a new claim with bounty.
 
-```bash
-# Get current number
-curl http://localhost:3000/number
+**Body:**
+```json
+{
+  "sourceChainId": 1,
+  "fromAddr": "0x1234",
+  "toAddr": "0x5678",
+  "amount": "1000000",
+  "deadline": "1756656000",
+  "minConfs": 6,
+  "bounty": "0.1",
+  "privateKey": "YOUR_PRIVATE_KEY"
+}
+```
 
-# Set number to 42
-curl -X POST http://localhost:3000/set-number \
-  -H "Content-Type: application/json" \
-  -d '{"newNumber": 42, "privateKey": "0x..."}'
+### `POST /claim/:claimId/verify-payment`
+Verify payment and resolve claim (requires private key).
 
-# Increment number
-curl -X POST http://localhost:3000/increment \
-  -H "Content-Type: application/json" \
-  -d '{"privateKey": "0x..."}'
-``` 
+### `POST /claim/:claimId/verify-non-existence`
+Verify non-existence and resolve claim (requires private key).
+
+### `POST /claim/:claimId/cancel`
+Cancel a claim and get bounty refund (requires poster's private key).
+
+## Testing
+
+Use the `api-examples.http` file with VS Code REST Client or similar tools to test the API endpoints.
+
+## Security Notes
+
+- **Never expose private keys** in production
+- Use environment variables for sensitive data
+- Consider implementing proper authentication for production use
+- Private keys are only needed for transaction signing
+
+## Contract Integration
+
+This backend integrates with the ClaimBoard smart contract which:
+- Escrows bounties in ETH
+- Manages claim lifecycle (Open → Resolved/Cancelled)
+- Handles bounty distribution to winners
+- Provides refunds for cancelled claims 

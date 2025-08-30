@@ -10,16 +10,16 @@ contract ClaimBoard {
 
     struct Claim {
         uint16  sourceChainId;   // FDC source id for BTC/XRP/DOGE
-        bytes   fromAddr;        // raw bytes (chain-specific format); allow empty if chain can’t prove “from”
+        bytes   fromAddr;        // raw bytes (chain-specific format); allow empty if chain can't prove "from"
         bytes   toAddr;          // raw bytes
-        uint256 amount;          // exact units (chain’s smallest unit)
+        uint256 amount;          // exact units (chain's smallest unit)
         uint64  deadline;        // unix seconds; before=existence, after=non-existence
         uint32  minConfs;        // confirmations required for Payment
         address poster;          // who funded the bounty
         uint256 bounty;          // native coin escrowed (payable at post)
         Status  status;          // Open / Resolved / Cancelled
         address winner;          // verifier that got paid
-      }
+    }
 
     mapping(bytes32 => Claim) claims;  // claimId = keccak(sourceChainId, from,to,amount,deadline,poster,nonce)
       

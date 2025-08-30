@@ -3,7 +3,6 @@ pragma solidity ^0.8.13;
 
 import {Test} from "forge-std/Test.sol";
 import {ClaimBoard} from "../src/ClaimBoard.sol";
-import {console} from "forge-std/console.sol";
 
 contract ClaimBoardTest is Test {
     ClaimBoard public claimBoard;

@@ -1,39 +1,41 @@
-### Get current counter value
-GET http://localhost:3000/number
+### Get contract information
+GET http://localhost:3000/contract-info
 
-### Set counter to 42
-POST http://localhost:3000/set-number
+### Post a new claim
+POST http://localhost:3000/claim
 Content-Type: application/json
 
 {
-  "newNumber": 42,
+  "sourceChainId": 1,
+  "fromAddr": "0x1234",
+  "toAddr": "0x5678", 
+  "amount": "1000000",
+  "deadline": "1756656000",
+  "minConfs": 6,
+  "bounty": "0.1",
   "privateKey": "{{privateKey}}"
 }
 
-### Set counter to 100
-POST http://localhost:3000/set-number
-Content-Type: application/json
-
-{
-  "newNumber": 100,
-  "privateKey": "{{privateKey}}"
-}
-
-### Increment counter
-POST http://localhost:3000/increment
-Content-Type: application/json
-
-{
-  "privateKey": "{{privateKey}}"
-}
-
-### Increment again
-POST http://localhost:3000/increment
+### Verify payment (resolve claim)
+POST http://localhost:3000/claim/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef/verify-payment
 Content-Type: application/json
 
 {
   "privateKey": "{{privateKey}}"
 }
 
-### Check final value
-GET http://localhost:3000/number 
+### Verify non-existence (resolve claim)
+POST http://localhost:3000/claim/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef/verify-non-existence
+Content-Type: application/json
+
+{
+  "privateKey": "{{privateKey}}"
+}
+
+### Cancel claim
+POST http://localhost:3000/claim/0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef/cancel
+Content-Type: application/json
+
+{
+  "privateKey": "{{privateKey}}"
+} 

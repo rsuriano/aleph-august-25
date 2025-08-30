@@ -2,7 +2,9 @@
 GET http://localhost:3000/contract-info
 
 ### Get claim information (example claimId - replace with actual)
-GET http://localhost:3000/claim/0xc57b53e856437c5d946d0a81b8240880030193ed7edfbf4fc28f5aca0436ce72
+### ⚠️  NO FUNCIONA EN COSTON2 - Error: opcode 0x5e not defined
+### Usar solo en Anvil local o redes compatibles
+# GET http://localhost:3000/claim/0xdeab2dfb587f724d193eaa0e4e8c20e5307625e83a5eb5db0903a75d0a6426ee
 
 ### Get all claims
 GET http://localhost:3000/claims

@@ -1,8 +1,11 @@
 ### Get contract information
 GET http://localhost:3000/contract-info
 
-### Get claim information
-GET http://localhost:3000/claim/0xbcc5391c06c4470448b9513ec3bed63d3080dbedf10859512c73a484152e8136
+### Get claim information (example claimId - replace with actual)
+GET http://localhost:3000/claim/0xc57b53e856437c5d946d0a81b8240880030193ed7edfbf4fc28f5aca0436ce72
+
+### Get all claims
+GET http://localhost:3000/claims
 
 ### Post a new claim
 POST http://localhost:3000/claim
@@ -13,13 +16,12 @@ Content-Type: application/json
   "fromAddr": "0x1234",
   "toAddr": "0x5678", 
   "amount": "1000000000000000000",
-  "deadline": "9999999999",
   "minConfs": 6,
   "bounty": "0.1",
   "privateKey": "{{privateKey}}"
 }
 
-### Verify payment (resolve claim)
+### Verify payment (resolve claim - replace claimId with actual)
 POST http://localhost:3000/claim/0x3599c1b1b1da64bda791c0754ab4136326645630ea11799feb26dcebecd0c741/verify-payment
 Content-Type: application/json
 
@@ -27,15 +29,15 @@ Content-Type: application/json
   "privateKey": "{{privateKey}}"
 }
 
-### Verify non-existence (resolve claim)
-POST http://localhost:3000/claim/0x3599c1b1b1da64bda791c0754ab4136326645630ea11799feb26dcebecd0c741/verify-non-existence
+### Verify non-existence (resolve claim - replace claimId with actual)
+POST http://localhost:3000/claim/0xc57b53e856437c5d946d0a81b8240880030193ed7edfbf4fc28f5aca0436ce72/verify-non-existence
 Content-Type: application/json
 
 {
   "privateKey": "{{privateKey}}"
 }
 
-### Cancel claim
+### Cancel claim (replace claimId with actual)
 POST http://localhost:3000/claim/0x3599c1b1b1da64bda791c0754ab4136326645630ea11799feb26dcebecd0c741/cancel
 Content-Type: application/json
 

@@ -18,6 +18,7 @@ contract ClaimBoard {
     }
 
     mapping(bytes32 => Claim) public claims;
+    bytes32[] public claimIds;
       
     error AmountCannotBeZero();
     error MinConfsCannotBeZero();
@@ -32,6 +33,17 @@ contract ClaimBoard {
         Claim memory claim = claims[claimId];
         if (claim.poster == address(0)) revert ClaimNotFound();
         return claim;
+    }
+
+    function getClaimsCount() external view returns (uint256) {
+        return claimIds.length;
+    }
+    
+    function getClaimByIndex(uint256 index) external view returns (bytes32 claimId, address poster, uint256 amount, uint256 bounty, uint8 status) {
+        require(index < claimIds.length, "Index out of bounds");
+        bytes32 id = claimIds[index];
+        Claim memory claim = claims[id];
+        return (id, claim.poster, claim.amount, claim.bounty, uint8(claim.status));
     }
 
     function postClaim(
@@ -61,6 +73,7 @@ contract ClaimBoard {
             winner: address(0)
         });
 
+        claimIds.push(claimId);
         return claimId;
     }
 

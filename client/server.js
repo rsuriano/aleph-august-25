@@ -10,6 +10,8 @@ app.use(express.json());
 const contractABI = [
   "function postClaim(uint16 sourceChainId, bytes calldata fromAddr, bytes calldata toAddr, uint256 amount, uint32 minConfs) external payable returns (bytes32)",
   "function getClaim(bytes32 claimId) external view returns (tuple(uint16 sourceChainId, bytes fromAddr, bytes toAddr, uint256 amount, uint64 deadline, uint32 minConfs, address poster, uint256 bounty, uint8 status, address winner))",
+  "function getClaimsCount() external view returns (uint256)",
+  "function getClaimByIndex(uint256 index) external view returns (bytes32, address, uint256, uint256, uint8)",
   "function verifyPayment(bytes32 claimId) external",
   "function verifyNonExistence(bytes32 claimId) external", 
   "function cancelClaim(bytes32 claimId) external"
@@ -61,6 +63,33 @@ app.get('/claim/:claimId', async (req, res) => {
     if (error.message.includes('ClaimNotFound') || error.message.includes('0x0455eeee')) {
       return res.status(404).json({ error: 'Claim not found' });
     }
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all claims
+app.get('/claims', async (req, res) => {
+  try {
+    const count = await contract.getClaimsCount();
+    const totalClaims = Number(count);
+    
+    const claims = [];
+    for (let i = 0; i < totalClaims; i++) {
+      const [claimId, poster, amount, bounty, status] = await contract.getClaimByIndex(i);
+      claims.push({
+        claimId: claimId,
+        poster: poster,
+        amount: amount.toString(),
+        bounty: ethers.formatEther(bounty),
+        status: Number(status) // 0=Open, 1=Resolved, 2=Cancelled
+      });
+    }
+    
+    res.json({
+      totalClaims: totalClaims,
+      claims: claims
+    });
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

@@ -1,0 +1,7 @@
+{
+  "rest-client.environmentVariables": {
+    "$shared": {
+      "privateKey": "0x4e3955fca88cd55cd6a42306ecb53a5dbbcd343591abfa87e2836bd516887f90"
+    },
+  }
+}

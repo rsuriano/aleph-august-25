@@ -1,0 +1,39 @@
+### Get current counter value
+GET http://localhost:3000/number
+
+### Set counter to 42
+POST http://localhost:3000/set-number
+Content-Type: application/json
+
+{
+  "newNumber": 42,
+  "privateKey": "{{privateKey}}"
+}
+
+### Set counter to 100
+POST http://localhost:3000/set-number
+Content-Type: application/json
+
+{
+  "newNumber": 100,
+  "privateKey": "{{privateKey}}"
+}
+
+### Increment counter
+POST http://localhost:3000/increment
+Content-Type: application/json
+
+{
+  "privateKey": "{{privateKey}}"
+}
+
+### Increment again
+POST http://localhost:3000/increment
+Content-Type: application/json
+
+{
+  "privateKey": "{{privateKey}}"
+}
+
+### Check final value
+GET http://localhost:3000/number 

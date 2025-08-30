@@ -160,4 +160,71 @@ contract ClaimBoardTest is Test {
         claimBoard.cancelClaim(claimId);
         vm.stopPrank();
     }
+
+    function test_GetClaim() public {
+        vm.startPrank(alice);
+        
+        bytes32 claimId = claimBoard.postClaim{value: 1 ether}(
+            1, // sourceChainId
+            "0x1234", // fromAddr
+            "0x5678", // toAddr
+            1000, // amount
+            uint64(block.timestamp + 1 days), // deadline
+            6 // minConfs
+        );
+        
+        vm.stopPrank();
+        
+        // Get the claim and verify all fields
+        ClaimBoard.Claim memory claim = claimBoard.getClaim(claimId);
+        
+        assertEq(claim.sourceChainId, 1);
+        assertEq(claim.fromAddr, "0x1234");
+        assertEq(claim.toAddr, "0x5678");
+        assertEq(claim.amount, 1000);
+        assertEq(claim.deadline, uint64(block.timestamp + 1 days));
+        assertEq(claim.minConfs, 6);
+        assertEq(claim.poster, alice);
+        assertEq(claim.bounty, 1 ether);
+        assertEq(uint8(claim.status), uint8(ClaimBoard.Status.Open));
+        assertEq(claim.winner, address(0));
+        assertEq(claim.nonce, 0); // First claim should have nonce 0
+    }
+
+    function test_GetClaimWithMultipleClaims() public {
+        vm.startPrank(alice);
+        
+        // Post first claim
+        bytes32 claimId1 = claimBoard.postClaim{value: 1 ether}(
+            1, // sourceChainId
+            "0x1234", // fromAddr
+            "0x5678", // toAddr
+            1000, // amount
+            uint64(block.timestamp + 1 days), // deadline
+            6 // minConfs
+        );
+        
+        // Post second claim with same parameters (should have different nonce)
+        bytes32 claimId2 = claimBoard.postClaim{value: 2 ether}(
+            1, // sourceChainId
+            "0x1234", // fromAddr
+            "0x5678", // toAddr
+            1000, // amount
+            uint64(block.timestamp + 1 days), // deadline
+            6 // minConfs
+        );
+        
+        vm.stopPrank();
+        
+        // Verify both claims exist and are different
+        assertTrue(claimId1 != claimId2);
+        
+        ClaimBoard.Claim memory claim1 = claimBoard.getClaim(claimId1);
+        ClaimBoard.Claim memory claim2 = claimBoard.getClaim(claimId2);
+        
+        assertEq(claim1.nonce, 0);
+        assertEq(claim2.nonce, 1);
+        assertEq(claim1.bounty, 1 ether);
+        assertEq(claim2.bounty, 2 ether);
+    }
 }

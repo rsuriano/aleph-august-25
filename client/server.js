@@ -7,21 +7,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// ClaimBoard Contract ABI - just the essential functions
 const contractABI = [
-  "function postClaim(uint16 sourceChainId, bytes calldata fromAddr, bytes calldata toAddr, uint256 amount, uint64 deadline, uint32 minConfs) external payable returns (bytes32)",
-  "function verifyPayment(bytes32 claimId) public",
-  "function verifyNonExistence(bytes32 claimId) public", 
-  "function cancelClaim(bytes32 claimId) public"
+  "function postClaim(uint16 sourceChainId, bytes calldata fromAddr, bytes calldata toAddr, uint256 amount, uint32 minConfs) external payable returns (bytes32)",
+  "function getClaim(bytes32 claimId) external view returns (tuple(uint16 sourceChainId, bytes fromAddr, bytes toAddr, uint256 amount, uint64 deadline, uint32 minConfs, address poster, uint256 bounty, uint8 status, address winner))",
+  "function verifyPayment(bytes32 claimId) external",
+  "function verifyNonExistence(bytes32 claimId) external", 
+  "function cancelClaim(bytes32 claimId) external"
 ];
 
-// Contract address - you'll need to update this after deployment
 const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
-
-// Provider - update with your network details
 const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
-
-// Contract instance
 const contract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, provider);
 
 // Get contract info
@@ -40,25 +35,46 @@ app.get('/contract-info', async (req, res) => {
   }
 });
 
+// Get claim information
+app.get('/claim/:claimId', async (req, res) => {
+  try {
+    const { claimId } = req.params;
+    const claim = await contract.getClaim(claimId);
+    
+    res.json({
+      claimId: claimId,
+      claim: {
+        sourceChainId: Number(claim[0]),
+        fromAddr: claim[1],
+        toAddr: claim[2],
+        amount: claim[3].toString(),
+        deadline: Number(claim[4]),
+        minConfs: Number(claim[5]),
+        poster: claim[6],
+        bounty: ethers.formatEther(claim[7]),
+        status: Number(claim[8]), // 0=Open, 1=Resolved, 2=Cancelled
+        winner: claim[9]
+      }
+    });
+  } catch (error) {
+    // Contract will revert with ClaimNotFound if claim doesn't exist
+    if (error.message.includes('ClaimNotFound') || error.message.includes('0x0455eeee')) {
+      return res.status(404).json({ error: 'Claim not found' });
+    }
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Post a new claim
 app.post('/claim', async (req, res) => {
   try {
-    const { 
-      sourceChainId, 
-      fromAddr, 
-      toAddr, 
-      amount, 
-      deadline, 
-      minConfs, 
-      bounty,
-      privateKey 
-    } = req.body;
+    const { sourceChainId, fromAddr, toAddr, amount, minConfs, bounty, privateKey } = req.body;
     
     if (!privateKey) {
       return res.status(400).json({ error: 'Private key required' });
     }
 
-    if (!sourceChainId || !toAddr || !amount || !deadline || !minConfs || !bounty) {
+    if (!sourceChainId || !toAddr || !amount || !minConfs || !bounty) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -66,26 +82,28 @@ app.post('/claim', async (req, res) => {
     const contractWithSigner = contract.connect(wallet);
     
     const bountyWei = ethers.parseEther(bounty.toString());
-    const deadlineUint64 = BigInt(deadline);
     
+    // Call the contract function - it returns the claimId directly
+    const claimId = await contractWithSigner.postClaim.staticCall(
+      sourceChainId,
+      fromAddr || "0x",
+      toAddr,
+      amount,
+      minConfs,
+      { value: bountyWei }
+    );
+    
+    // Now execute the actual transaction
     const tx = await contractWithSigner.postClaim(
       sourceChainId,
       fromAddr || "0x",
       toAddr,
       amount,
-      deadlineUint64,
       minConfs,
       { value: bountyWei }
     );
     
     await tx.wait();
-    
-    const claimId = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ['uint16', 'bytes', 'bytes', 'uint256', 'uint64', 'uint32', 'address'],
-        [sourceChainId, fromAddr || "0x", toAddr, amount, deadlineUint64, minConfs, wallet.address]
-      )
-    );
     
     res.json({ 
       success: true, 
@@ -98,7 +116,7 @@ app.post('/claim', async (req, res) => {
   }
 });
 
-// Verify payment (resolve claim)
+// Verify payment
 app.post('/claim/:claimId/verify-payment', async (req, res) => {
   try {
     const { claimId } = req.params;
@@ -125,7 +143,7 @@ app.post('/claim/:claimId/verify-payment', async (req, res) => {
   }
 });
 
-// Verify non-existence (resolve claim)
+// Verify non-existence
 app.post('/claim/:claimId/verify-non-existence', async (req, res) => {
   try {
     const { claimId } = req.params;
@@ -181,6 +199,4 @@ app.post('/claim/:claimId/cancel', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Contract address: ${CONTRACT_ADDRESS}`);
-  console.log(`RPC URL: ${process.env.RPC_URL}`);
 }); 

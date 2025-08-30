@@ -2,17 +2,17 @@
 pragma solidity ^0.8.13;
 
 import {Script} from "forge-std/Script.sol";
-import {Counter} from "../src/Counter.sol";
+import {ClaimBoard} from "../src/ClaimBoard.sol";
 
-contract CounterScript is Script {
-    Counter public counter;
+contract ClaimBoardScript is Script {
+    ClaimBoard public claimBoard;
 
     function setUp() public {}
 
     function run() public {
         vm.startBroadcast();
 
-        counter = new Counter();
+        claimBoard = new ClaimBoard();
 
         vm.stopBroadcast();
     }

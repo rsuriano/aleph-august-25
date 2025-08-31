@@ -53,8 +53,8 @@ contract ClaimBoard {
 
     struct Claim {
         uint16  sourceChainId;
-        bytes   fromAddr;
-        bytes   toAddr;
+        address fromAddr;
+        address toAddr;
         uint256 amount;
         uint64  deadline;
         uint32  minConfs;
@@ -110,24 +110,6 @@ contract ClaimBoard {
         bytes32 id = claimIds[index];
         Claim memory claim = claims[id];
         
-        // Convert bytes to address (assuming Ethereum addresses)
-        address from = address(0);
-        address to = address(0);
-        
-        if (claim.fromAddr.length >= 20) {
-            bytes memory fromBytes = claim.fromAddr;
-            assembly {
-                from := mload(add(fromBytes, 32))
-            }
-        }
-        
-        if (claim.toAddr.length >= 20) {
-            bytes memory toBytes = claim.toAddr;
-            assembly {
-                to := mload(add(toBytes, 32))
-            }
-        }
-        
         return (
             id, 
             claim.poster, 
@@ -136,16 +118,16 @@ contract ClaimBoard {
             uint8(claim.status), 
             claim.deadline,
             claim.sourceChainId,
-            from,
-            to,
+            claim.fromAddr,
+            claim.toAddr,
             claim.minConfs
         );
     }
 
     function postClaim(
         uint16 sourceChainId,
-        bytes calldata fromAddr,
-        bytes calldata toAddr,
+        address fromAddr,
+        address toAddr,
         uint256 amount,
         uint32 minConfs,
         uint32 expirationMinutes
@@ -188,13 +170,9 @@ contract ClaimBoard {
         // Verify transaction details match the claim
         IFDCVerification.ResponseBody memory response = proof.data.responseBody;
         
-        // Convert claim addresses
-        address claimFromAddr = _bytesToAddress(claim.fromAddr);
-        address claimToAddr = _bytesToAddress(claim.toAddr);
-        
         // Verify all transaction details
-        if (response.sourceAddress != claimFromAddr) revert TransactionMismatch();
-        if (response.receivingAddress != claimToAddr) revert TransactionMismatch();
+        if (response.sourceAddress != claim.fromAddr) revert TransactionMismatch();
+        if (response.receivingAddress != claim.toAddr) revert TransactionMismatch();
         if (response.value != claim.amount) revert TransactionMismatch();
         if (response.status != 1) revert TransactionMismatch();
         claim.status = Status.Resolved;
@@ -221,22 +199,5 @@ contract ClaimBoard {
         payable(claim.poster).transfer(claim.bounty);
     }
 
-    // Helper function to convert bytes to address
-    function _bytesToAddress(bytes memory data) internal pure returns (address) {
-        if (data.length < 20) return address(0);
-        
-        address result;
-        assembly {
-            // Load from data + 32 (skip length) but shift right to get the address
-            // For 20-byte data, we need to shift right by 12 bytes (96 bits)
-            result := shr(96, mload(add(data, 0x20)))
-        }
-        return result;
-    }
-    
-    // DEBUG: Public function to test bytes conversion
-    function debugBytesToAddress(bytes memory data) external pure returns (address, uint256) {
-        address converted = _bytesToAddress(data);
-        return (converted, data.length);
-    }
+
 }

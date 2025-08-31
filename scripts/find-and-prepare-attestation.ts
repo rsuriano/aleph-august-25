@@ -69,13 +69,13 @@ async function findMatchingTransaction(claim: Claim): Promise<string | null> {
       throw new Error(`Etherscan API error: ${response.status}`);
     }
     
-    const data = await response.json();
+    const data = await response.json() as any;
     
     if (data.status !== "1") {
       throw new Error(`Etherscan API error: ${data.message}`);
     }
     
-    const transactions = data.result;
+    const transactions = data.result as any[];
     console.log(`📊 Found ${transactions.length} transactions from address ${claim.fromAddr}`);
     
     // Filter transactions that match our criteria
@@ -145,14 +145,15 @@ async function findMatchingTransactionFallback(claim: Claim): Promise<string | n
       // Check each transaction in the block
       for (const tx of block.transactions) {
         if (typeof tx === 'string') continue;
+        const transaction = tx as any;
         
         if (
-          tx.from?.toLowerCase() === claim.fromAddr.toLowerCase() &&
-          tx.to?.toLowerCase() === claim.toAddr.toLowerCase() &&
-          tx.value?.toString() === claim.amount
+          transaction.from?.toLowerCase() === claim.fromAddr.toLowerCase() &&
+          transaction.to?.toLowerCase() === claim.toAddr.toLowerCase() &&
+          transaction.value?.toString() === claim.amount
         ) {
-          console.log(`✅ Found matching transaction: ${tx.hash}`);
-          return tx.hash;
+          console.log(`✅ Found matching transaction: ${transaction.hash}`);
+          return transaction.hash;
         }
       }
     } catch (error) {

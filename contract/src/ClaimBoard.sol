@@ -2,49 +2,55 @@
 pragma solidity ^0.8.13;
 
 // FDC Verification contract interface
-interface IFDCVerification {
-    function verifyEVMTransaction(
-        bytes32[] calldata merkleProof,
-        FDCData calldata data
-    ) external view returns (bool);
+interface IEVMTransaction {
+    struct Event {
+        uint32 logIndex;
+        address emitterAddress;
+        bytes32[] topics;
+        bytes data;
+        bool removed;
+    }
+
+    struct ResponseBody {
+        uint64 blockNumber;
+        uint64 timestamp;
+        address sourceAddress;
+        bool isDeployment;
+        address receivingAddress;
+        uint256 value;
+        bytes input;
+        uint8 status;
+        Event[] events;
+    }
+
+    struct RequestBody {
+        bytes32 transactionHash;
+        uint16 requiredConfirmations;
+        bool provideInput;
+        bool listEvents;
+        uint32[] logIndices;
+    }
+
+    struct Response {
+        bytes32 attestationType;
+        bytes32 sourceId;
+        uint64 votingRound;
+        uint64 lowestUsedTimestamp;
+        RequestBody requestBody;
+        ResponseBody responseBody;
+    }
+
+    struct Proof {
+        bytes32[] merkleProof;
+        Response data;
+    }
 }
 
-// FDC Data structures matching your TypeScript code
-struct FDCData {
-    bytes32 attestationType;
-    bytes32 sourceId;
-    uint64 votingRound;
-    uint64 lowestUsedTimestamp;
-    FDCRequestBody requestBody;
-    FDCResponseBody responseBody;
-}
-
-struct FDCRequestBody {
-    bytes32 transactionHash;
-    uint16 requiredConfirmations;
-    bool provideInput;
-    bool listEvents;
-    uint32[] logIndices;
-}
-
-struct FDCResponseBody {
-    uint64 blockNumber;
-    uint64 timestamp;
-    address sourceAddress;
-    bool isDeployment;
-    address receivingAddress;
-    uint256 value;
-    bytes input;
-    uint8 status;
-    FDCEvent[] events;
-}
-
-struct FDCEvent {
-    uint32 logIndex;
-    address emitterAddress;
-    bytes32[] topics;
-    bytes data;
-    bool removed;
+interface IFdcVerification {
+    function verifyEVMTransaction(IEVMTransaction.Proof calldata _proof)
+        external
+        view
+        returns (bool);
 }
 
 contract ClaimBoard {
@@ -79,6 +85,9 @@ contract ClaimBoard {
     error ClaimNotFound();
     error FDCVerificationFailed();
     error InvalidFDCData();
+
+    event ProofChecked(bytes32 indexed claimId, bool verified);
+    event Called();
     
     constructor() {
         fdcContract = 0x075bf301fF07C4920e5261f93a0609640F53487D;
@@ -136,44 +145,40 @@ contract ClaimBoard {
     // New function: Verify claim using FDC
     function verifyClaimWithFDC(
         bytes32 claimId,
-        bytes32[] calldata merkleProof,
-        FDCData calldata fdcData
+        IEVMTransaction.Proof calldata proof
     ) external {
         Claim storage claim = claims[claimId];
         if (claim.status != Status.Open) revert ClaimAlreadyResolved();
         // if (claim.deadline < block.timestamp) revert ClaimExpired();
 
-        // Verify the FDC data matches the claim
-        if (!_validateFDCData(claim, fdcData)) revert InvalidFDCData();
+        // // Verify the FDC data matches the claim
+        // if (!_validateFDCData(claim, fdcData)) revert InvalidFDCData();
+
+        emit Called();
 
         // Call FDC contract for verification
-        bool verified = IFDCVerification(fdcContract).verifyEVMTransaction(merkleProof, fdcData);
+        bool verified;
+        // Try/catch avoids “missing revert data” nuking your demo if proof is bad
+        try IFdcVerification(fdcContract).verifyEVMTransaction(proof) returns (bool ok) {
+            verified = ok;
+        } catch {
+            verified = false;
+        }
+        emit ProofChecked(claimId, verified);
+
         if (!verified) revert FDCVerificationFailed();
 
-        // Update claim with verification results
-        claim.status = Status.Resolved;
-        claim.winner = msg.sender;
-        claim.transactionHash = fdcData.requestBody.transactionHash;
+        // if (!verified) revert FDCVerificationFailed();
 
-        // Transfer bounty to verifier
-        payable(msg.sender).transfer(claim.bounty);
-    }
+        // // // Update claim with verification results
+        // claim.status = Status.Resolved;
+        // claim.winner = msg.sender;
+        // claim.transactionHash = proof.data.requestBody.transactionHash;
 
-    // Internal function to validate FDC data against claim
-    function _validateFDCData(Claim storage claim, FDCData calldata fdcData) internal view returns (bool) {
-        // Check if the transaction hash matches expected parameters
-        // You can customize this validation based on your needs
-        return true; // Simplified for now
-    }
+        // // Transfer bounty to verifier
+        // payable(msg.sender).transfer(claim.bounty);
 
-    function verifyPayment(bytes32 claimId) external {
-        Claim storage claim = claims[claimId];
-        if (claim.status != Status.Open) revert ClaimAlreadyResolved();
-        if (claim.deadline < block.timestamp) revert ClaimExpired();
-
-        claim.status = Status.Resolved;
-        claim.winner = msg.sender;
-        payable(msg.sender).transfer(claim.bounty);
+        emit Called();
     }
 
     function verifyNonExistence(bytes32 claimId) external {

@@ -7,7 +7,7 @@ const RPC = "https://coston2-api.flare.network/ext/C/rpc";
 const PRIVATE_KEY = process.env.PRIVATE_KEY!;
 
 const IFDC_ABI = [
-  "function verifyEVMTransaction((bytes32[] merkleProof, (bytes32 attestationType, bytes32 sourceId, uint64 votingRound, uint64 lowestUsedTimestamp, (bytes32 transactionHash, uint16 requiredConfirmations, bool provideInput, bool listEvents, uint32[] logIndices) requestBody, (uint64 blockNumber, uint64 timestamp, address sourceAddress, bool isDeployment, address receivingAddress, uint256 value, bytes input, uint8 status, (uint32 logIndex, address emitterAddress, bytes32[] topics, bytes data, bool removed)[] events) responseBody) data)) view returns (bool)",
+  "function verifyEVMTransaction((bytes32[],(bytes32,bytes32,uint64,uint64,(bytes32,uint16,bool,bool,uint32[]),(uint64,uint64,address,bool,address,uint256,bytes,uint8,(uint32,address,bytes32[],bytes,bool)[]))) view returns (bool)",
 ];
 
 async function main() {

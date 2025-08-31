@@ -180,15 +180,15 @@ contract ClaimBoard {
         payable(msg.sender).transfer(claim.bounty);
     }
 
-    function verifyNonExistence(bytes32 claimId) external {
-        Claim storage claim = claims[claimId];
-        if (claim.status != Status.Open) revert ClaimAlreadyResolved();
-        if (claim.deadline < block.timestamp) revert ClaimExpired();
+    // function verifyNonExistence(bytes32 claimId) external {
+    //     Claim storage claim = claims[claimId];
+    //     if (claim.status != Status.Open) revert ClaimAlreadyResolved();
+    //     if (claim.deadline < block.timestamp) revert ClaimExpired();
 
-        claim.status = Status.Resolved;
-        claim.winner = msg.sender;
-        payable(msg.sender).transfer(claim.bounty);
-    }
+    //     claim.status = Status.Resolved;
+    //     claim.winner = msg.sender;
+    //     payable(msg.sender).transfer(claim.bounty);
+    // }
 
     function cancelClaim(bytes32 claimId) external {
         Claim storage claim = claims[claimId];
